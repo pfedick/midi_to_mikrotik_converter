@@ -4,17 +4,17 @@
 #include <fstream>
 #include <iomanip>
 
-Mikrotik::Mikrotik(MidiTrack &track, 
-	const uint64_t index, 
-	const int octaveShift, 
-	const int noteShift, 
+Mikrotik::Mikrotik(MidiTrack& track,
+	const uint64_t index,
+	const int octaveShift,
+	const int noteShift,
 	const double fineTuning,
 	const bool commentsFlag
 )
-	: m_track(track), 
-	m_index(index), 
-	m_octaveShift(octaveShift), 
-	m_noteShift(noteShift), 
+	: m_track(track),
+	m_index(index),
+	m_octaveShift(octaveShift),
+	m_noteShift(noteShift),
 	m_fineTuning(fineTuning),
 	m_commentsFlag(commentsFlag)
 {
@@ -28,10 +28,10 @@ double durationToMs(VLV vlv, const double pulsesPerSecond)
 std::string Mikrotik::getTimeAsText(const double time)
 {
 	std::stringstream out;
-	out << std::setfill('0') << std::setw(2) << ((static_cast<int>(time)/(1000*60*60))%24) << ":";
-	out << std::setfill('0') << std::setw(2) << ((static_cast<int>(time)/(1000*60))%60) << ":";
-	out << std::setfill('0') << std::setw(2) << ((static_cast<int>(time)/1000)%60) << ":";
-	out << std::setfill('0') << std::setw(3) << ((static_cast<int>(time)%1000));
+	out << std::setfill('0') << std::setw(2) << ((static_cast<int>(time) / (1000 * 60 * 60)) % 24) << ":";
+	out << std::setfill('0') << std::setw(2) << ((static_cast<int>(time) / (1000 * 60)) % 60) << ":";
+	out << std::setfill('0') << std::setw(2) << ((static_cast<int>(time) / 1000) % 60) << ":";
+	out << std::setfill('0') << std::setw(3) << ((static_cast<int>(time) % 1000));
 	return out.str();
 }
 
@@ -39,15 +39,14 @@ std::string Mikrotik::getTrackTimeLength(const uint8_t channel)
 {
 	std::stringstream out;
 	double totalTime = m_track.getPreDelayMs();
-	for(auto event : m_track.getEvents())
+	for (auto event : m_track.getEvents())
 	{
 		uint8_t cmd = event.getCmd().getMainCmd();
-		if(cmd == NOTE_ON || cmd == NOTE_OFF)
+		if (cmd == NOTE_ON || cmd == NOTE_OFF)
 		{
-			if(event.getCmd().getSubCmd() == channel)
+			if (event.getCmd().getSubCmd() == channel)
 				totalTime += durationToMs(event.getDelay(), m_track.getPulsesPerSecond());
-		}
-		else
+		} else
 		{
 			totalTime += durationToMs(event.getDelay(), m_track.getPulsesPerSecond());
 		}
@@ -63,10 +62,10 @@ std::string Mikrotik::getNotesCount(const uint8_t channel)
 {
 	uint64_t count = 0;
 	std::stringstream out;
-	for(auto event : m_track.getEvents())
+	for (auto event : m_track.getEvents())
 	{
 		uint8_t cmd = event.getCmd().getMainCmd();
-		if(cmd == NOTE_ON && event.getCmd().getSubCmd() == channel)
+		if (cmd == NOTE_ON && event.getCmd().getSubCmd() == channel)
 			count++;
 	}
 	out << count;
@@ -98,7 +97,7 @@ std::string Mikrotik::getScriptHeader(const uint8_t channel)
 std::string Mikrotik::getDelayLine(const double delayMs)
 {
 	std::stringstream out;
-	if(delayMs != 0.0)
+	if (delayMs != 0.0)
 		out << ":delay " << delayMs << "ms;\n";
 	m_processedTime += delayMs;
 	return out.str();
@@ -109,22 +108,22 @@ std::string Mikrotik::getBeepLine(Note note)
 	std::stringstream out;
 	const double freq = note.getFrequencyHz(m_octaveShift, m_noteShift, m_fineTuning);
 	const double duration = durationToMs(note.getDelay(), m_track.getPulsesPerSecond());
-	if(freq == 0.0)
+	if (freq == 0.0)
 	{
 		BOOST_LOG_TRIVIAL(warning) << "Found note with zero frequency, ignoring it:";
 		note.log();
 	}
-	if(duration == 0.0)
+	if (duration == 0.0)
 	{
-		BOOST_LOG_TRIVIAL(warning) 
-		<< "Found overlayed note ignoring it:";
+		BOOST_LOG_TRIVIAL(warning)
+			<< "Found overlayed note ignoring it:";
 		note.log();
 		return out.str();
 	}
-	
+
 	out << ":beep frequency=" << freq;
 	out << " length=" << duration << "ms;";
-	if(m_commentsFlag)
+	if (m_commentsFlag)
 	{
 		out << " # " << note.getSymbolicNote(m_octaveShift, m_noteShift, m_fineTuning);
 		out << " @ " << getTimeAsText(m_processedTime);
@@ -140,22 +139,22 @@ std::string Mikrotik::buildNote(Note note)
 	 * :beep frequency=440 length=1000ms;
 	 * :delay 1000ms;
 	 */
-	
+
 	/*
 	outputBuffer << ":beep frequency=" << noteOn.getFrequencyHz();
 	outputBuffer << " length=" << noteOn.getDurationPulses() << "ms;";
 	if(m_commentsFlag)
 		outputBuffer << " # " << noteOn.getSymbolicNote();
-	outputBuffer << "\n:delay " << 
+	outputBuffer << "\n:delay " <<
 		(noteOff.getDurationPulses() + noteOn.getDurationPulses()) << "ms;\n\n";
 	*/
-	
+
 	//note.log();
 	std::stringstream out;
-	if(note.getType() == NOTE_TYPE_ON)
+	if (note.getType() == NOTE_TYPE_ON)
 		out << getBeepLine(note);
 	double delay = durationToMs(note.getDelay(), m_track.getPulsesPerSecond());
-	if(delay != 0.0)
+	if (delay != 0.0)
 	{
 		out << getDelayLine(durationToMs(note.getDelay(), m_track.getPulsesPerSecond()));
 		out << "\n";
@@ -163,7 +162,7 @@ std::string Mikrotik::buildNote(Note note)
 	return out.str();
 }
 
-int Mikrotik::buildScriptForChannel(std::string &fileName, const uint8_t channel)
+int Mikrotik::buildScriptForChannel(std::string& fileName, const uint8_t channel)
 {
 	m_processedTime = 0.0;
 	std::string outFileName(fileName);
@@ -179,34 +178,33 @@ int Mikrotik::buildScriptForChannel(std::string &fileName, const uint8_t channel
 	outputBuffer << getScriptHeader(channel);
 	outputBuffer << getDelayLine(m_track.getPreDelayMs());
 	uint64_t foundNoteEventsCount = 0;
-	for(auto event : m_track.getEvents())
+	for (auto event : m_track.getEvents())
 	{
 		uint8_t cmd = event.getCmd().getMainCmd();
-		if((cmd == NOTE_ON || cmd == NOTE_OFF) && 
+		if ((cmd == NOTE_ON || cmd == NOTE_OFF) &&
 			event.getCmd().getSubCmd() == channel)
 		{
 			outputBuffer << buildNote(Note(event));
 			foundNoteEventsCount++;
-		}
-		else
+		} else
 		{
 			outputBuffer << getDelayLine(durationToMs(event.getDelay(), m_track.getPulsesPerSecond()));
 		}
 	}
 
-	if(foundNoteEventsCount == 0)
+	if (foundNoteEventsCount == 0)
 		return 0;
 
-	BOOST_LOG_TRIVIAL(info) 
-		<< "Mikrotik buildScript started for track: " 
+	BOOST_LOG_TRIVIAL(info)
+		<< "Mikrotik buildScript started for track: "
 		<< m_index << " channel: " << (uint32_t)channel;
 
 	std::ofstream outputFile;
 	outputFile.open(outFileName);
-	if(!outputFile.is_open())
+	if (!outputFile.is_open())
 	{
-		BOOST_LOG_TRIVIAL(info) 
-			<< "Mikrotik buildScript failed cannot create output file: " 
+		BOOST_LOG_TRIVIAL(info)
+			<< "Mikrotik buildScript failed cannot create output file: "
 			<< outFileName;
 		return -1;
 	}
@@ -216,22 +214,22 @@ int Mikrotik::buildScriptForChannel(std::string &fileName, const uint8_t channel
 	return 0;
 }
 
-int Mikrotik::buildScript(std::string &fileName)
+int Mikrotik::buildScript(std::string& fileName)
 {
-	if(m_track.getEvents().size() == 0)
+	if (m_track.getEvents().size() == 0)
 	{
 		BOOST_LOG_TRIVIAL(info) << "Cannot find any events in track, skipping";
 		return 0;
 	}
-	
+
 	int ret = 0;
-	for(uint8_t channel = 0; channel < 16; channel++)
+	for (uint8_t channel = 0; channel < 16; channel++)
 	{
 		ret = buildScriptForChannel(fileName, channel);
-		if(ret != 0)
+		if (ret != 0)
 		{
-			BOOST_LOG_TRIVIAL(info) 
-			<< "Mikrotik buildScript failed on channel: " << channel;
+			BOOST_LOG_TRIVIAL(info)
+				<< "Mikrotik buildScript failed on channel: " << channel;
 		}
 	}
 	return ret;

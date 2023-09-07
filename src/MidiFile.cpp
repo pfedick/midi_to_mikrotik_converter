@@ -7,38 +7,43 @@
 #include <fstream>
 
 MidiFile::MidiFile(
-	std::string &filePath, 
+	std::string& filePath,
 	const uint32_t bpm
-) : m_filePath(filePath), m_bpm(bpm) 
+) : m_filePath(filePath), m_bpm(bpm)
 {
 };
 
 int MidiFile::processV0()
 {
+	if (m_mtrkTracks.size() == 0)
+	{
+		BOOST_LOG_TRIVIAL(error) << "No tracks found for processing";
+		return -1;
+	}
+
 	return 0;
 }
 
 int MidiFile::processV1()
 {
-	if(m_mtrkTracks.size() == 0)
+	if (m_mtrkTracks.size() == 0)
 	{
 		BOOST_LOG_TRIVIAL(error) << "No tracks found for processing";
 		return -1;
 	}
 
 	MidiTrack track = m_mtrkTracks[0];
-	// Read BPM from MIDI File 
+	// Read BPM from MIDI File
 	// only when user not specified custom value
-	if(m_bpm != 0)
+	if (m_bpm != 0)
 	{
 		BOOST_LOG_TRIVIAL(info) << "BPM set to user custom value: " << m_bpm;
-	}
-	else
+	} else
 	{
 		std::vector<Event> events = track.getEvents();
-		for(auto event : events)
+		for (auto event : events)
 		{
-			if(event.getCmd().getFullCmd() == TEMPO)
+			if (event.getCmd().getFullCmd() == TEMPO)
 			{
 				m_bpm = EventTempo(event).get();
 				BOOST_LOG_TRIVIAL(info) << "Found original BPM information in service track: " << m_bpm;
@@ -46,13 +51,13 @@ int MidiFile::processV1()
 			}
 		}
 	}
-	if(m_bpm == 0)
+	if (m_bpm == 0)
 	{
 		m_bpm = g_default_bpm;
 		BOOST_LOG_TRIVIAL(info) << "Cannot extract track BPM, setting default value: " << m_bpm;
 	}
 
-	for(uint64_t i=0; i<m_mtrkTracks.size(); i++)
+	for (uint64_t i=0; i < m_mtrkTracks.size(); i++)
 		m_mtrkTracks[i].updateBpm(m_bpm);
 
 	return 0;
@@ -87,27 +92,27 @@ int MidiFile::postProcess()
 
 int MidiFile::process()
 {
-	if(m_filePath == "")
+	if (m_filePath == "")
 		return -1;
 
 	ByteStream stream(m_filePath);
-	if(!stream.isOk())
+	if (!stream.isOk())
 	{
 		BOOST_LOG_TRIVIAL(error) << "Stream is invalid";
 		return -1;
 	}
 	m_mthd = MthdHeader(stream);
 	m_mthd.log();
-	if(!m_mthd.isOk())
+	if (!m_mthd.isOk())
 	{
 		BOOST_LOG_TRIVIAL(error) << "MThd header is invalid";
 		return -1;
 	}
-	for(uint64_t i=0; i<m_mthd.getChunksCount(); i++)
+	for (uint64_t i=0; i < m_mthd.getChunksCount(); i++)
 	{
 		MidiTrack mtrk(stream, m_bpm, m_mthd.getPPQN());
 		mtrk.log();
-		if(!mtrk.isOk())
+		if (!mtrk.isOk())
 		{
 			BOOST_LOG_TRIVIAL(error) << "MTrk chunk header is invalid";
 			return -1;

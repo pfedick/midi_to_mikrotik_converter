@@ -1,6 +1,6 @@
 #ifndef BYTE_STREAM_HPP
 #define BYTE_STREAM_HPP
-
+#include <cstdint>
 #include <iostream>
 #include <fstream>
 #include <string>

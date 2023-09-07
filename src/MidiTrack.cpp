@@ -4,7 +4,7 @@
 
 const static std::string unknownTxtValue = "<UNKNOWN>";
 
-MidiTrack::MidiTrack(ByteStream &stream, const uint16_t bpm, const uint16_t ppqn)
+MidiTrack::MidiTrack(ByteStream& stream, const uint16_t bpm, const uint16_t ppqn)
 	: m_bpm(bpm), m_ppqn(ppqn)
 {
 	m_mtrk = stream.get_text_header();
@@ -12,7 +12,7 @@ MidiTrack::MidiTrack(ByteStream &stream, const uint16_t bpm, const uint16_t ppqn
 	m_startPos = stream.tellg();
 	m_trackPreDelay = VLV(stream);
 
-	while(stream.tellg() - m_startPos < m_size)
+	while (stream.tellg() - m_startPos < m_size)
 	{
 		m_events.push_back(Event(stream));
 	}
@@ -21,16 +21,16 @@ MidiTrack::MidiTrack(ByteStream &stream, const uint16_t bpm, const uint16_t ppqn
 
 	m_trackName = unknownTxtValue;
 	m_instrumentName = unknownTxtValue;
-	for(auto event : m_events)
+	for (auto event : m_events)
 	{
-		if(event.getCmd().getFullCmd() == TRACK_NAME)
+		if (event.getCmd().getFullCmd() == TRACK_NAME)
 			m_trackName = MetaEventText(event).getText();
-		if(event.getCmd().getFullCmd() == INSTRUMENT_NAME)
+		if (event.getCmd().getFullCmd() == INSTRUMENT_NAME)
 			m_instrumentName = MetaEventText(event).getText();
 	}
 
 	BOOST_LOG_TRIVIAL(info) << "MTrk header total read bytes " << m_endPos - m_startPos
-	<< " == " << m_size << " header size";
+		<< " == " << m_size << " header size";
 	BOOST_LOG_TRIVIAL(info) << "MTrk header pos at end: " << m_endPos;
 }
 
@@ -59,7 +59,8 @@ std::vector<Event> MidiTrack::getEvents()
 
 double MidiTrack::getPulsesPerSecond()
 {
-	return (double)(60000.0 / ( m_bpm * m_ppqn));
+	//printf("m_bpm=%d, m_ppqn=%d\n", m_bpm, m_ppqn);
+	return (double)(60000.0 / (m_bpm * m_ppqn));
 }
 
 double MidiTrack::getPreDelayMs()

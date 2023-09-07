@@ -43,10 +43,10 @@ static void init_log()
 		boost::log::keywords::auto_flush = true
 	);
 
-	// Output message to file, rotates when file 
+	// Output message to file, rotates when file
 	// reached 1mb or at midnight every day. Each log file
 	// is capped at 1mb and total is 20mb
-	boost::log::add_file_log (
+	boost::log::add_file_log(
 		boost::log::keywords::file_name = "mtmc_%3N.log",
 		boost::log::keywords::rotation_size = 100 * 1024 * 1024,
 		boost::log::keywords::max_size = 100 * 1024 * 1024,
@@ -58,14 +58,13 @@ static void init_log()
 	boost::log::add_common_attributes();
 
 	// Only output message with INFO or higher severity in Release
-#ifndef _DEBUG
+
 	boost::log::core::get()->set_filter(
-		boost::log::trivial::severity >= boost::log::trivial::info
-	);
-#endif
+		boost::log::trivial::severity >= boost::log::trivial::trace);
+
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	init_log();
 
@@ -88,9 +87,9 @@ int main(int argc, char *argv[])
 		("fine-tuning,t", po::value<double>(&fineTuning), "Sets frequency offset for all notes in case when you think your beeper produces beeps at wrong frequencies")
 		("bpm,b", po::value<int>(&newBpm), "Sets the new bpm to output file")
 		("comments,c", "Adds comments in the form of notes")
-	;
+		;
 
-	if(argc == 1)
+	if (argc == 1)
 	{
 		std::cout << desc << std::endl;
 		return 0;
@@ -103,15 +102,14 @@ int main(int argc, char *argv[])
 		po::store(parsed, vm);
 		po::notify(vm);
 
-		if(vm.count("help"))
+		if (vm.count("help"))
 		{
 			std::cout << desc << std::endl;
 			return 0;
 		}
-		if(vm.count("comments"))
+		if (vm.count("comments"))
 			enableCommentsFlag = true;
-	}
-	catch(std::exception& ex)
+	} catch (std::exception& ex)
 	{
 		std::cout << ex.what() << std::endl;
 		std::cout << desc << std::endl;
@@ -126,27 +124,27 @@ int main(int argc, char *argv[])
 	BOOST_LOG_TRIVIAL(fatal) << "A fatal severity message";
 	*/
 
-	if(inFileName == "")
+	if (inFileName == "")
 	{
 		BOOST_LOG_TRIVIAL(error) << "No input (SMF) file specified";
 		std::cout << desc << std::endl;
 		return 0;
 	}
 
-	if(outFileName == "")
+	if (outFileName == "")
 		outFileName = inFileName;
 
 	MidiFile midiObj(inFileName, newBpm);
 	midiObj.process();
 	std::vector<MidiTrack> tracks = midiObj.getTracks();
 
-	for(uint64_t i=0; i<tracks.size(); i++)
+	for (uint64_t i=0; i < tracks.size(); i++)
 	{
 		Mikrotik mikrotik(
-			tracks[i], 
-			i, 
-			octaveShift, 
-			noteShift, 
+			tracks[i],
+			i,
+			octaveShift,
+			noteShift,
 			fineTuning,
 			enableCommentsFlag
 		);

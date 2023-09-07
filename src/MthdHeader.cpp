@@ -1,7 +1,7 @@
 #include "MthdHeader.hpp"
 #include "boost/log/trivial.hpp"
 
-MthdHeader::MthdHeader(ByteStream &stream)
+MthdHeader::MthdHeader(ByteStream& stream)
 {
 	m_mthd = stream.get_text_header();
 	m_mthdChunkLength = stream.get32u_bswap();
@@ -21,19 +21,20 @@ void MthdHeader::log()
 
 bool MthdHeader::isOk()
 {
-	if(g_mthd_reference != m_mthd)
+	if (g_mthd_reference != m_mthd)
 		return false;
-	if(m_mthdChunkLength != 6)
+	if (m_mthdChunkLength != 6)
 		return false;
 	switch (m_formatType)
 	{
 	case MIDI_V0:
-		if(m_mtrkChunksCount != 0)
+		if (m_mtrkChunksCount != 1)
 			return false;
+		return true;
 	// For V1 and V2 number of tracks need to be more than zero
 	case MIDI_V1:
 	case MIDI_V2:
-		if(m_mtrkChunksCount == 0)
+		if (m_mtrkChunksCount == 0)
 			return false;
 		return true;
 	default:

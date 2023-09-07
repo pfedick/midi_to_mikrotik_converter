@@ -13,7 +13,7 @@ set(REQUIRED_BOOST_VERSION 1.75.0)
 IF(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /MT")
 ELSE()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -static-libstdc++")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ")
 ENDIF(MSVC)
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -37,26 +37,27 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
                 TLS_VERIFY ON)
 endif()
 
-include(${CMAKE_BINARY_DIR}/conan.cmake)
+#include(${CMAKE_BINARY_DIR}/conan.cmake)
 
-conan_cmake_configure(REQUIRES boost/${REQUIRED_BOOST_VERSION}
-                      GENERATORS cmake_find_package)
+#conan_cmake_configure(REQUIRES boost/${REQUIRED_BOOST_VERSION}
+#                      GENERATORS cmake_find_package)
 
-conan_cmake_autodetect(settings)
+#conan_cmake_autodetect(settings)
 
-conan_cmake_install(PATH_OR_REFERENCE .
-                    BUILD missing
-                    REMOTE conancenter
-                    SETTINGS ${settings})
+#conan_cmake_install(PATH_OR_REFERENCE .
+#                    BUILD missing
+#                    REMOTE conancenter
+#                    SETTINGS ${settings})
 
-set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+add_definitions(-DBOOST_LOG_DYN_LINK)
 find_package(Boost COMPONENTS program_options log REQUIRED)
 
 include_directories("./include")
 
-file(GLOB SOURCES 
+file(GLOB SOURCES
     "./include/Utils.hpp"
     "./include/ByteStream.hpp"
     "./include/MidiEventCode.hpp"
@@ -91,13 +92,13 @@ file(GLOB SOURCES
 add_executable(${PROJECT_NAME} ${SOURCES})
 IF(MSVC)
     set_property(
-        TARGET 
-        ${PROJECT_NAME} 
-        PROPERTY 
-        MSVC_RUNTIME_LIBRARY 
+        TARGET
+        ${PROJECT_NAME}
+        PROPERTY
+        MSVC_RUNTIME_LIBRARY
         "MultiThreaded$<$<CONFIG:>:>"
     )
 ENDIF(MSVC)
 
 include_directories(${Boost_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} Boost::Boost)
+target_link_libraries(${PROJECT_NAME} Boost::log Boost::program_options)
